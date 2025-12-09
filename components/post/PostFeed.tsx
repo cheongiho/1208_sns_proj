@@ -115,38 +115,6 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
     [userId]
   );
 
-  // 초기 로드
-  useEffect(() => {
-    fetchPosts(0, false);
-  }, [userId]); // userId가 변경되면 다시 로드
-
-  // Intersection Observer 설정
-  useEffect(() => {
-    if (!hasMore || loading || loadingMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          fetchPosts(offset, true);
-        }
-      },
-      {
-        threshold: 0.1,
-      }
-    );
-
-    const sentinel = sentinelRef.current;
-    if (sentinel) {
-      observer.observe(sentinel);
-    }
-
-    return () => {
-      if (sentinel) {
-        observer.unobserve(sentinel);
-      }
-    };
-  }, [hasMore, loading, loadingMore, offset, fetchPosts]);
-
   // 게시물 삭제 핸들러
   const handlePostDeleted = useCallback((postId: string) => {
     setPosts((prev) => prev.filter((post) => post.id !== postId));
@@ -183,6 +151,39 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
   const handlePostIdChange = useCallback((newPostId: string) => {
     setSelectedPostId(newPostId);
   }, []);
+
+  // 초기 로드
+  useEffect(() => {
+    fetchPosts(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]); // userId가 변경되면 다시 로드
+
+  // Intersection Observer 설정
+  useEffect(() => {
+    if (!hasMore || loading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          fetchPosts(offset, true);
+        }
+      },
+      {
+        threshold: 0.1,
+      }
+    );
+
+    const sentinel = sentinelRef.current;
+    if (sentinel) {
+      observer.observe(sentinel);
+    }
+
+    return () => {
+      if (sentinel) {
+        observer.unobserve(sentinel);
+      }
+    };
+  }, [hasMore, loading, loadingMore, offset, fetchPosts]);
 
   // 로딩 상태
   if (loading) {

@@ -29,7 +29,7 @@ interface CommentListProps {
 
 function CommentList({
   comments,
-  postId,
+  postId, // eslint-disable-line @typescript-eslint/no-unused-vars -- React.memo 비교 함수에서 사용됨
   showAll = false,
   onCommentDeleted,
   onShowAllClick,

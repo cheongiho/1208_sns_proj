@@ -14,12 +14,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, Plus, Heart, User } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
-import { useState } from "react";
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { user } = useUser();
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 프로필 경로 확인
   const isProfileActive = pathname?.startsWith("/profile");
@@ -32,13 +30,10 @@ export default function BottomNav() {
     return pathname === path;
   };
 
-  // 프로필 링크 생성
+  // 프로필 링크 생성 (본인 프로필로 이동)
+  // /profile로 링크하면 자동으로 Clerk ID를 Supabase user_id로 변환하여 리다이렉트됨
   const getProfileLink = () => {
-    // user가 로드되지 않았거나 id가 없으면 기본 경로
-    if (!user?.id) {
-      return "/profile";
-    }
-    return `/profile/${user.id}`;
+    return "/profile";
   };
 
   // 메뉴 항목 정의
@@ -61,7 +56,7 @@ export default function BottomNav() {
       href: "#",
       onClick: () => {
         // 추후 CreatePostModal 열기
-        setShowCreateModal(true);
+        // TODO: CreatePostModal 구현
       },
     },
     {

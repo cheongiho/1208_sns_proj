@@ -24,6 +24,7 @@ import type { PostWithUserAndStats } from "@/lib/types";
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useUser();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 프로필 경로 확인 (본인 프로필 또는 다른 사용자 프로필)
@@ -38,12 +39,9 @@ export default function Sidebar() {
   };
 
   // 프로필 링크 생성 (본인 프로필로 이동)
+  // /profile로 링크하면 자동으로 Clerk ID를 Supabase user_id로 변환하여 리다이렉트됨
   const getProfileLink = () => {
-    // user가 로드되지 않았거나 id가 없으면 기본 경로
-    if (!user?.id) {
-      return "/profile";
-    }
-    return `/profile/${user.id}`;
+    return "/profile";
   };
 
   // 메뉴 항목 정의

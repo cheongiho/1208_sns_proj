@@ -11,7 +11,7 @@
  */
 
 import Link from "next/link";
-import { Bell, MessageCircle, User } from "lucide-react";
+import { Bell, MessageCircle } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 
 export default function Header() {
