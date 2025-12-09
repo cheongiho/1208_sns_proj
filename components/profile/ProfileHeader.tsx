@@ -24,7 +24,6 @@ interface ProfileHeaderProps {
 }
 
 export default function ProfileHeader({ user, isOwnProfile }: ProfileHeaderProps) {
-  const { user: currentUser } = useUser();
   
   // 팔로우 상태 관리
   const [isFollowing, setIsFollowing] = useState(user.isFollowing || false);

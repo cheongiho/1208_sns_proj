@@ -16,15 +16,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, Plus, User } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import CreatePostModal from "@/components/post/CreatePostModal";
-import type { PostWithUserAndStats } from "@/lib/types";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 프로필 경로 확인 (본인 프로필 또는 다른 사용자 프로필)
@@ -206,7 +202,7 @@ export default function Sidebar() {
       <CreatePostModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onPostCreated={(post) => {
+        onPostCreated={() => {
           // 게시물 생성 성공 시 모달 닫기
           setShowCreateModal(false);
           // 페이지 새로고침하여 새 게시물 표시 (선택적)

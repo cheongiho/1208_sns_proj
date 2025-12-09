@@ -21,7 +21,7 @@ export default async function ProfileRedirectPage() {
 
   // Clerk user ID를 Supabase user_id로 변환
   const supabase = createClerkSupabaseClient();
-  let { data: userData, error: userError } = await supabase
+  const { data: userData, error: userError } = await supabase
     .from("users")
     .select("id")
     .eq("clerk_id", clerkUserId)

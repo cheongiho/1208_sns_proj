@@ -13,7 +13,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { X, Upload, Image as ImageIcon } from "lucide-react";
+import { Upload, Image as ImageIcon } from "lucide-react";
 import Image from "next/image";
 import {
   Dialog,
@@ -187,7 +187,7 @@ export default function CreatePostModal({
         .substring(7)}.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("posts")
         .upload(filePath, selectedFile, {
           cacheControl: "3600",

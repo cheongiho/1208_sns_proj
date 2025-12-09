@@ -13,11 +13,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, Plus, Heart, User } from "lucide-react";
-import { useUser } from "@clerk/nextjs";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { user } = useUser();
 
   // 프로필 경로 확인
   const isProfileActive = pathname?.startsWith("/profile");

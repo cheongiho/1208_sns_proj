@@ -59,8 +59,6 @@ function FollowButton({
       // 성공 시 콜백 호출 (통계 업데이트)
       if (onFollowChange) {
         // 팔로우 추가 시 +1, 제거 시 -1
-        const currentCount = 0; // 실제로는 ProfileHeader에서 관리하는 followers_count를 전달받아야 함
-        // 하지만 여기서는 콜백을 통해 ProfileHeader에서 처리하도록 함
         onFollowChange(newFollowing, newFollowing ? 1 : -1);
       }
     } catch (error) {

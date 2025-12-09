@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
-import { ChevronLeft, ChevronRight, MoreHorizontal, MessageCircle, Send, Bookmark } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, MessageCircle, Bookmark } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -27,7 +27,6 @@ import CommentList from "@/components/comment/CommentList";
 import CommentForm from "@/components/comment/CommentForm";
 import type { PostWithUserAndStats, CommentWithUser } from "@/lib/types";
 import { getUserFriendlyMessage, extractErrorMessage, isNetworkError } from "@/lib/utils/error-handler";
-import { formatRelativeTime } from "@/lib/utils/format-time";
 import { formatNumber } from "@/lib/utils/format-number";
 
 interface PostModalProps {

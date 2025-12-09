@@ -13,6 +13,7 @@
 
 import { useState, FormEvent, KeyboardEvent } from "react";
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import { getUserFriendlyMessage, extractErrorMessage, isNetworkError } from "@/lib/utils/error-handler";
 import type { CommentWithUser } from "@/lib/types";
 
@@ -109,12 +110,12 @@ export default function CommentForm({
       <div className="px-4 py-3 border-t border-[#dbdbdb]">
         <p className="text-sm text-[#8e8e8e] text-center">
           댓글을 작성하려면{" "}
-          <a
+          <Link
             href="/sign-in"
             className="text-[#0095f6] hover:underline"
           >
             로그인
-          </a>
+          </Link>
           이 필요합니다
         </p>
       </div>
