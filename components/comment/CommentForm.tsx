@@ -139,13 +139,20 @@ export default function CommentForm({
         <button
           type="submit"
           disabled={isLoading || content.trim().length === 0}
-          className={`text-sm font-semibold transition-opacity ${
+          className={`text-sm font-semibold transition-opacity min-w-[60px] flex items-center justify-center gap-1.5 touch-manipulation ${
             isLoading || content.trim().length === 0
               ? "text-[#8e8e8e] cursor-not-allowed"
-              : "text-[#0095f6] hover:opacity-50"
+              : "text-[#0095f6] hover:opacity-50 active:opacity-70"
           }`}
         >
-          {isLoading ? "게시 중..." : "게시"}
+          {isLoading ? (
+            <>
+              <div className="w-3 h-3 border-2 border-[#0095f6]/30 border-t-[#0095f6] rounded-full animate-spin" />
+              <span>게시 중...</span>
+            </>
+          ) : (
+            "게시"
+          )}
         </button>
       </div>
       {error && (

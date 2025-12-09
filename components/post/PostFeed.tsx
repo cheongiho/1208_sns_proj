@@ -18,9 +18,10 @@ import type { PostWithUserAndStats, CommentWithUser, PaginatedResponse } from "@
 
 interface PostFeedProps {
   userId?: string; // 프로필 페이지용
+  onPostDeleted?: (postId: string) => void; // 외부에서 삭제 이벤트를 처리할 수 있도록
 }
 
-export default function PostFeed({ userId }: PostFeedProps) {
+export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted }: PostFeedProps) {
   const [posts, setPosts] = useState<PostWithUserAndStats[]>([]);
   const [commentsMap, setCommentsMap] = useState<Map<string, CommentWithUser[]>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -179,14 +180,38 @@ export default function PostFeed({ userId }: PostFeedProps) {
     );
   }
 
+  // 게시물 삭제 핸들러
+  const handlePostDeleted = useCallback((postId: string) => {
+    setPosts((prev) => prev.filter((post) => post.id !== postId));
+    // 댓글 맵에서도 제거
+    setCommentsMap((prevMap) => {
+      const newMap = new Map(prevMap);
+      newMap.delete(postId);
+      return newMap;
+    });
+    // 외부 콜백 호출 (필요한 경우)
+    if (externalOnPostDeleted) {
+      externalOnPostDeleted(postId);
+    }
+  }, [externalOnPostDeleted]);
+
   return (
     <div className="space-y-4">
-      {posts.map((post) => (
-        <PostCard
+      {posts.map((post, index) => (
+        <div
           key={post.id}
-          post={post}
-          comments={commentsMap.get(post.id) || []}
-        />
+          className="animate-fade-in"
+          style={{
+            animationDelay: `${Math.min(index * 50, 300)}ms`,
+          }}
+        >
+          <PostCard
+            post={post}
+            comments={commentsMap.get(post.id) || []}
+            onPostDeleted={handlePostDeleted}
+            onDeleteError={() => fetchPosts(0, false)}
+          />
+        </div>
       ))}
 
       {/* 무한 스크롤 감지 요소 */}

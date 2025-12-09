@@ -82,9 +82,15 @@ export default function LikeButton({
   return (
     <button
       onClick={handleClick}
-      className={`hover:opacity-50 transition-all duration-150 ${
-        isAnimating ? "scale-125" : "scale-100"
-      }`}
+      className={`
+        min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0
+        flex items-center justify-center
+        hover:opacity-70 active:opacity-50 active:scale-95
+        transition-all duration-150 ease-out
+        touch-manipulation
+        ${isAnimating ? "scale-125" : "scale-100"}
+        ${isLoading ? "opacity-50 cursor-wait" : "cursor-pointer"}
+      `}
       aria-label={isLiked ? "좋아요 취소" : "좋아요"}
       disabled={isLoading}
     >

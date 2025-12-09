@@ -13,8 +13,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal } from "lucide-react";
-import { useState, useRef } from "react";
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Trash2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import type { PostWithUserAndStats, CommentWithUser } from "@/lib/types";
 import { formatRelativeTime } from "@/lib/utils/format-time";
 import { formatNumber } from "@/lib/utils/format-number";
@@ -22,13 +22,25 @@ import { useUser } from "@clerk/nextjs";
 import LikeButton from "./LikeButton";
 import CommentList from "@/components/comment/CommentList";
 import CommentForm from "@/components/comment/CommentForm";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface PostCardProps {
   post: PostWithUserAndStats;
   comments?: CommentWithUser[];
+  onPostDeleted?: (postId: string) => void;
+  onDeleteError?: () => void; // 삭제 실패 시 피드 새로고침용
 }
 
-export default function PostCard({ post, comments = [] }: PostCardProps) {
+export default function PostCard({ post, comments = [], onPostDeleted, onDeleteError }: PostCardProps) {
   const { user: currentUser } = useUser();
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
@@ -37,6 +49,10 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
   const doubleTapTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [localComments, setLocalComments] = useState<CommentWithUser[]>(comments);
   const [commentsCount, setCommentsCount] = useState(post.comments_count);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // 캡션 2줄 초과 여부 확인
   const captionLines = post.caption?.split("\n") || [];
@@ -111,15 +127,66 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
     setCommentsCount((prev) => Math.max(0, prev - 1));
   };
 
+  // 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [showMenu]);
+
+  // 게시물 삭제 핸들러
+  const handleDeletePost = async () => {
+    setIsDeleting(true);
+    
+    try {
+      // Optimistic UI: 먼저 피드에서 제거
+      if (onPostDeleted) {
+        onPostDeleted(post.id);
+      }
+
+      const response = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "게시물 삭제에 실패했습니다");
+      }
+
+      // 성공 시 다이얼로그 닫기
+      setShowDeleteDialog(false);
+      setShowMenu(false);
+    } catch (error) {
+      console.error("Delete post error:", error);
+      // 에러 발생 시 사용자에게 알림
+      alert(error instanceof Error ? error.message : "게시물 삭제에 실패했습니다");
+      // 삭제 실패 시 피드 새로고침 (롤백)
+      if (onDeleteError) {
+        onDeleteError();
+      }
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
-    <article className="bg-white border-b border-[#dbdbdb] mb-4">
+    <article className="bg-white border-b border-[#dbdbdb] mb-4 md:mb-6">
       {/* 헤더 (60px 높이) */}
-      <header className="flex items-center gap-3 px-4 py-3 h-[60px]">
+      <header className="flex items-center gap-3 px-3 py-2.5 md:px-4 md:py-3 h-[56px] md:h-[60px]">
         {/* 프로필 이미지 */}
         <Link href={profileLink} className="flex-shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+          <div className="w-8 h-8 md:w-8 md:h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
             {/* 추후 Clerk 프로필 이미지 또는 기본 아바타 */}
-            <span className="text-sm font-semibold text-gray-600">
+            <span className="text-xs md:text-sm font-semibold text-gray-600">
               {post.user.name.charAt(0).toUpperCase()}
             </span>
           </div>
@@ -128,22 +195,41 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
         {/* 사용자명 및 시간 */}
         <div className="flex-1 min-w-0">
           <Link href={profileLink}>
-            <span className="font-semibold text-[#262626] hover:opacity-50 transition-opacity">
+            <span className="text-sm md:text-base font-semibold text-[#262626] hover:opacity-50 transition-opacity active:opacity-70">
               {post.user.name}
             </span>
           </Link>
-          <div className="text-xs text-[#8e8e8e]">
+          <div className="text-[10px] md:text-xs text-[#8e8e8e]">
             {formatRelativeTime(post.created_at)}
           </div>
         </div>
 
         {/* ⋯ 메뉴 */}
-        <button
-          className="p-2 hover:opacity-50 transition-opacity"
-          aria-label="더보기"
-        >
-          <MoreHorizontal className="w-5 h-5 text-[#262626]" />
-        </button>
+        <div className="relative" ref={menuRef}>
+          <button
+            className="p-2 md:p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center hover:opacity-50 active:opacity-70 transition-opacity touch-manipulation"
+            aria-label="더보기"
+            onClick={() => setShowMenu(!showMenu)}
+          >
+            <MoreHorizontal className="w-5 h-5 text-[#262626]" />
+          </button>
+
+          {/* 드롭다운 메뉴 */}
+          {showMenu && isOwnPost && (
+            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-[#dbdbdb] z-50 animate-fade-in">
+              <button
+                className="w-full px-4 py-3 text-left text-[#262626] hover:bg-gray-50 active:bg-gray-100 flex items-center gap-2 text-sm font-medium min-h-[44px] touch-manipulation transition-colors"
+                onClick={() => {
+                  setShowMenu(false);
+                  setShowDeleteDialog(true);
+                }}
+              >
+                <Trash2 className="w-4 h-4 text-red-600" />
+                <span className="text-red-600">삭제</span>
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
       {/* 이미지 영역 (1:1 정사각형) */}
@@ -173,8 +259,8 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
       </div>
 
       {/* 액션 버튼 영역 (48px 높이) */}
-      <div className="flex items-center justify-between px-4 py-3 h-[48px]">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-3 py-2.5 md:px-4 md:py-3 h-[48px]">
+        <div className="flex items-center gap-3 md:gap-4">
           {/* 좋아요 버튼 */}
           <LikeButton
             postId={post.id}
@@ -185,7 +271,7 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
 
           {/* 댓글 버튼 */}
           <button
-            className="hover:opacity-50 transition-opacity"
+            className="min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center hover:opacity-50 active:opacity-70 transition-opacity touch-manipulation"
             aria-label="댓글"
           >
             <MessageCircle className="w-6 h-6 text-[#262626]" />
@@ -193,7 +279,7 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
 
           {/* 공유 버튼 (1차 MVP 제외이지만 UI 준비) */}
           <button
-            className="hover:opacity-50 transition-opacity"
+            className="min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center hover:opacity-50 active:opacity-70 transition-opacity touch-manipulation disabled:opacity-30"
             aria-label="공유"
             disabled
           >
@@ -203,7 +289,7 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
 
         {/* 북마크 버튼 (1차 MVP 제외이지만 UI 준비) */}
         <button
-          className="hover:opacity-50 transition-opacity"
+          className="min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center hover:opacity-50 active:opacity-70 transition-opacity touch-manipulation disabled:opacity-30"
           aria-label="북마크"
           disabled
         >
@@ -213,8 +299,8 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
 
       {/* 좋아요 수 */}
       {likesCount > 0 && (
-        <div className="px-4 pb-2">
-          <span className="font-semibold text-[#262626]">
+        <div className="px-3 md:px-4 pb-1.5 md:pb-2">
+          <span className="text-sm md:text-base font-semibold text-[#262626]">
             좋아요 {formatNumber(likesCount)}개
           </span>
         </div>
@@ -222,10 +308,10 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
 
       {/* 캡션 */}
       {post.caption && (
-        <div className="px-4 pb-2">
-          <div className="text-[#262626]">
+        <div className="px-3 md:px-4 pb-1.5 md:pb-2">
+          <div className="text-sm md:text-base text-[#262626] leading-relaxed">
             <Link href={profileLink}>
-              <span className="font-semibold hover:opacity-50 transition-opacity">
+              <span className="font-semibold hover:opacity-50 active:opacity-70 transition-opacity">
                 {post.user.name}
               </span>
             </Link>
@@ -238,7 +324,7 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
                 </span>
                 <button
                   onClick={() => setShowFullCaption(true)}
-                  className="text-[#8e8e8e] hover:text-[#262626] transition-colors ml-1"
+                  className="text-[#8e8e8e] hover:text-[#262626] active:text-[#262626] transition-colors ml-1 min-h-[44px] md:min-h-0 touch-manipulation"
                 >
                   더 보기
                 </button>
@@ -266,6 +352,42 @@ export default function PostCard({ post, comments = [] }: PostCardProps) {
 
       {/* 댓글 작성 폼 */}
       <CommentForm postId={post.id} onCommentAdded={handleCommentAdded} />
+
+      {/* 삭제 확인 다이얼로그 */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>게시물 삭제</DialogTitle>
+            <DialogDescription>
+              이 게시물을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              취소
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeletePost}
+              disabled={isDeleting}
+              className="min-w-[100px]"
+            >
+              {isDeleting ? (
+                <span className="flex items-center gap-2">
+                  <LoadingSpinner size="sm" className="border-white/30 border-t-white" />
+                  삭제 중...
+                </span>
+              ) : (
+                "삭제"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </article>
   );
 }

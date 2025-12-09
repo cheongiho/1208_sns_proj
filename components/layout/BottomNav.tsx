@@ -89,13 +89,13 @@ export default function BottomNav() {
             <button
               key={item.label}
               onClick={item.onClick}
-              className="flex items-center justify-center w-full h-full hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center w-full h-full min-h-[44px] hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation"
               aria-label={item.label}
             >
               <Icon
-                className={`w-6 h-6 ${
+                className={`w-6 h-6 transition-transform duration-150 ${
                   isItemActive
-                    ? "text-[#262626]"
+                    ? "text-[#262626] scale-110"
                     : "text-[#8e8e8e]"
                 }`}
               />
@@ -107,12 +107,12 @@ export default function BottomNav() {
           <Link
             key={item.label}
             href={item.href}
-            className="flex items-center justify-center w-full h-full hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center w-full h-full min-h-[44px] hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation"
             aria-label={item.label}
           >
             <Icon
-              className={`w-6 h-6 ${
-                isItemActive ? "text-[#262626]" : "text-[#8e8e8e]"
+              className={`w-6 h-6 transition-transform duration-150 ${
+                isItemActive ? "text-[#262626] scale-110" : "text-[#8e8e8e]"
               }`}
             />
           </Link>

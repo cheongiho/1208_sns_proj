@@ -26,7 +26,7 @@ export default function Header() {
       <div className="flex items-center gap-4">
         {/* 알림 (1차 MVP 제외이지만 UI 준비) */}
         <button
-          className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+          className="p-2 min-w-[44px] min-h-[44px] hover:bg-gray-50 active:bg-gray-100 rounded-lg transition-colors duration-150 touch-manipulation"
           aria-label="알림"
         >
           <Bell className="w-6 h-6 text-[#262626]" />
@@ -34,7 +34,7 @@ export default function Header() {
 
         {/* DM (1차 MVP 제외이지만 UI 준비) */}
         <button
-          className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
+          className="p-2 min-w-[44px] min-h-[44px] hover:bg-gray-50 active:bg-gray-100 rounded-lg transition-colors duration-150 touch-manipulation"
           aria-label="메시지"
         >
           <MessageCircle className="w-6 h-6 text-[#262626]" />

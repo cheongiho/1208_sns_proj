@@ -76,7 +76,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen bg-white border-r border-[#dbdbdb] z-40 hidden md:block">
+    <aside className="fixed left-0 top-0 h-screen bg-white border-r border-[#dbdbdb] z-40 hidden md:block transition-all duration-300">
       {/* Desktop: 244px 너비, 아이콘 + 텍스트 */}
       <div className="w-[244px] lg:block hidden h-full">
         <div className="flex flex-col p-4 gap-1">
@@ -121,7 +121,7 @@ export default function Sidebar() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors ${
+                className={`flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 ${
                   isItemActive ? "bg-gray-50" : ""
                 }`}
               >
@@ -178,7 +178,7 @@ export default function Sidebar() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center justify-center w-12 h-12 rounded-lg hover:bg-gray-50 transition-colors ${
+                className={`flex items-center justify-center w-12 h-12 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation ${
                   isItemActive ? "bg-gray-50" : ""
                 }`}
                 title={item.label}
