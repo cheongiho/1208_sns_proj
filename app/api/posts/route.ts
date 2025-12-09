@@ -6,12 +6,18 @@ import type { PostWithUserAndStats, PaginatedResponse } from "@/lib/types";
 
 /**
  * @file route.ts
- * @description 게시물 목록 조회 API
+ * @description 게시물 목록 조회 및 생성 API
  *
  * GET /api/posts
  * - 쿼리 파라미터: limit, offset, userId
  * - 시간 역순 정렬
  * - post_stats 뷰 사용하여 좋아요/댓글 수 포함
+ *
+ * POST /api/posts
+ * - 게시물 생성
+ * - Clerk 인증 검증
+ * - imageUrl 및 caption 검증
+ * - posts 테이블에 데이터 저장
  */
 
 export async function GET(request: NextRequest) {
@@ -164,6 +170,167 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(response);
+  } catch (error) {
+    const apiError = handleApiError(error, 500);
+    console.error("API error:", error);
+    return NextResponse.json(
+      {
+        error: apiError.message,
+        ...(apiError.details && { details: apiError.details }),
+        ...(apiError.code && { code: apiError.code }),
+      },
+      { status: apiError.status }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Clerk 인증 확인
+    const { userId: clerkUserId } = await auth();
+
+    if (!clerkUserId) {
+      const apiError = handleApiError(new Error("Unauthorized"), 401);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
+    }
+
+    // 요청 본문 파싱
+    const body = await request.json();
+    const { imageUrl, caption } = body;
+
+    // 필수 필드 검증
+    if (!imageUrl || typeof imageUrl !== "string") {
+      const apiError = handleApiError(new Error("imageUrl is required and must be a string"), 400);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
+    }
+
+    // imageUrl 유효성 검증 (URL 형식 확인)
+    try {
+      new URL(imageUrl);
+    } catch {
+      const apiError = handleApiError(new Error("imageUrl must be a valid URL"), 400);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
+    }
+
+    // caption 유효성 검증 (선택적이지만 제공된 경우 검증)
+    let finalCaption: string | null = null;
+    if (caption !== undefined && caption !== null) {
+      if (typeof caption !== "string") {
+        const apiError = handleApiError(new Error("caption must be a string"), 400);
+        return NextResponse.json(
+          {
+            error: apiError.message,
+            ...(apiError.code && { code: apiError.code }),
+          },
+          { status: apiError.status }
+        );
+      }
+
+      const trimmedCaption = caption.trim();
+      // 최대 길이 검증 (Instagram은 2,200자)
+      const MAX_CAPTION_LENGTH = 2200;
+      if (trimmedCaption.length > MAX_CAPTION_LENGTH) {
+        const apiError = handleApiError(
+          new Error(`캡션은 ${MAX_CAPTION_LENGTH}자 이하여야 합니다`),
+          400
+        );
+        return NextResponse.json(
+          {
+            error: apiError.message,
+            ...(apiError.code && { code: apiError.code }),
+          },
+          { status: apiError.status }
+        );
+      }
+
+      // 빈 문자열이면 null로 저장
+      finalCaption = trimmedCaption.length > 0 ? trimmedCaption : null;
+    }
+
+    const supabase = createClerkSupabaseClient();
+
+    // Clerk user ID를 Supabase user_id로 변환
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("id, clerk_id, name, created_at")
+      .eq("clerk_id", clerkUserId)
+      .single();
+
+    if (userError || !userData) {
+      const apiError = handleApiError(userError || new Error("User not found"), 404);
+      console.error("User lookup error:", userError);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
+    }
+
+    // 게시물 삽입
+    const { data: postData, error: postError } = await supabase
+      .from("posts")
+      .insert({
+        user_id: userData.id,
+        image_url: imageUrl,
+        caption: finalCaption,
+      })
+      .select()
+      .single();
+
+    if (postError) {
+      const apiError = handleApiError(postError, 500);
+      console.error("Supabase error:", postError);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
+    }
+
+    // PostWithUserAndStats 형식으로 응답 반환
+    const post: PostWithUserAndStats = {
+      id: postData.id,
+      user_id: postData.user_id,
+      image_url: postData.image_url,
+      caption: postData.caption,
+      created_at: postData.created_at,
+      updated_at: postData.updated_at,
+      user: {
+        id: userData.id,
+        clerk_id: userData.clerk_id,
+        name: userData.name,
+        created_at: userData.created_at,
+      },
+      likes_count: 0,
+      comments_count: 0,
+      isLiked: false,
+    };
+
+    return NextResponse.json({ success: true, data: post });
   } catch (error) {
     const apiError = handleApiError(error, 500);
     console.error("API error:", error);

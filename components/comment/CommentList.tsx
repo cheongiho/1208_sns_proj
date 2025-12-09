@@ -95,7 +95,7 @@ function CommentList({
   };
 
   return (
-    <div className="px-4 pb-4 space-y-1">
+    <div className="px-4 pb-4 space-y-1" role="list" aria-label="댓글 목록">
       {/* "댓글 N개 모두 보기" 버튼 (showAll이 false이고 댓글이 2개 이상일 때) */}
       {!showAll && localComments.length > 2 && (
         <button
@@ -111,6 +111,7 @@ function CommentList({
         <div
           key={comment.id}
           className="text-sm text-[#262626] flex items-start gap-2 group"
+          role="listitem"
         >
           <div className="flex-1 min-w-0">
             <Link
@@ -128,8 +129,15 @@ function CommentList({
             <button
               onClick={() => handleDelete(comment.id)}
               disabled={deletingCommentId === comment.id}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:opacity-50 disabled:opacity-50"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 min-w-[44px] min-h-[44px] flex items-center justify-center hover:opacity-50 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded focus:opacity-100"
               aria-label="댓글 삭제"
+              aria-busy={deletingCommentId === comment.id}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleDelete(comment.id);
+                }
+              }}
             >
               <MoreHorizontal className="w-4 h-4 text-[#8e8e8e]" />
             </button>

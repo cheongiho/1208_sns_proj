@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { LuShield, LuCheck, LuX, LuTriangleAlert } from "react-icons/lu";
 import Link from "next/link";
 
+// 빌드 시 prerendering 방지
+export const dynamic = "force-dynamic";
+
 interface UserData {
   id: string;
   clerk_id: string;

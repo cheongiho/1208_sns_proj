@@ -94,11 +94,20 @@ function LikeButton({
         hover:opacity-70 active:opacity-50 active:scale-95
         transition-all duration-150 ease-out
         touch-manipulation
+        focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded
         ${isAnimating ? "scale-125" : "scale-100"}
         ${isLoading ? "opacity-50 cursor-wait" : "cursor-pointer"}
       `}
       aria-label={isLiked ? "좋아요 취소" : "좋아요"}
+      aria-pressed={isLiked}
+      aria-busy={isLoading}
       disabled={isLoading}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleClick();
+        }
+      }}
     >
       <Heart
         className={`w-6 h-6 transition-all duration-150 ${

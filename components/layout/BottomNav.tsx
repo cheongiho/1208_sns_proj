@@ -89,8 +89,14 @@ export default function BottomNav() {
             <button
               key={item.label}
               onClick={item.onClick}
-              className="flex items-center justify-center w-full h-full min-h-[44px] hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation"
+              className="flex items-center justify-center w-full h-full min-h-[44px] hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded"
               aria-label={item.label}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  item.onClick?.();
+                }
+              }}
             >
               <Icon
                 className={`w-6 h-6 transition-transform duration-150 ${
@@ -107,8 +113,9 @@ export default function BottomNav() {
           <Link
             key={item.label}
             href={item.href}
-            className="flex items-center justify-center w-full h-full min-h-[44px] hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation"
+            className="flex items-center justify-center w-full h-full min-h-[44px] hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded"
             aria-label={item.label}
+            aria-current={isItemActive ? "page" : undefined}
           >
             <Icon
               className={`w-6 h-6 transition-transform duration-150 ${

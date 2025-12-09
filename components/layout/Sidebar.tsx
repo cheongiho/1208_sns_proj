@@ -18,6 +18,8 @@ import { usePathname } from "next/navigation";
 import { Home, Search, Plus, User } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
+import CreatePostModal from "@/components/post/CreatePostModal";
+import type { PostWithUserAndStats } from "@/lib/types";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -95,7 +97,8 @@ export default function Sidebar() {
                 <button
                   key={item.label}
                   onClick={item.onClick}
-                  className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors text-left w-full"
+                  className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded-lg"
+                  aria-label={item.label}
                 >
                   <Icon
                     className={`w-6 h-6 ${
@@ -121,9 +124,11 @@ export default function Sidebar() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 ${
+                className={`flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded-lg ${
                   isItemActive ? "bg-gray-50" : ""
                 }`}
+                aria-label={item.label}
+                aria-current={isItemActive ? "page" : undefined}
               >
                 <Icon
                   className={`w-6 h-6 ${
@@ -160,8 +165,9 @@ export default function Sidebar() {
                 <button
                   key={item.label}
                   onClick={item.onClick}
-                  className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center justify-center w-12 h-12 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded-lg"
                   title={item.label}
+                  aria-label={item.label}
                 >
                   <Icon
                     className={`w-6 h-6 ${
@@ -178,10 +184,12 @@ export default function Sidebar() {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center justify-center w-12 h-12 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation ${
+                className={`flex items-center justify-center w-12 h-12 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors duration-150 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded-lg ${
                   isItemActive ? "bg-gray-50" : ""
                 }`}
                 title={item.label}
+                aria-label={item.label}
+                aria-current={isItemActive ? "page" : undefined}
               >
                 <Icon
                   className={`w-6 h-6 ${
@@ -195,6 +203,18 @@ export default function Sidebar() {
           })}
         </div>
       </div>
+
+      {/* CreatePostModal */}
+      <CreatePostModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onPostCreated={(post) => {
+          // 게시물 생성 성공 시 모달 닫기
+          setShowCreateModal(false);
+          // 페이지 새로고침하여 새 게시물 표시 (선택적)
+          // window.location.reload();
+        }}
+      />
     </aside>
   );
 }

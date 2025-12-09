@@ -40,9 +40,10 @@ interface PostCardProps {
   comments?: CommentWithUser[];
   onPostDeleted?: (postId: string) => void;
   onDeleteError?: () => void; // 삭제 실패 시 피드 새로고침용
+  onPostClick?: (postId: string) => void; // 게시물 클릭 시 (모달 열기)
 }
 
-function PostCard({ post, comments = [], onPostDeleted, onDeleteError }: PostCardProps) {
+function PostCard({ post, comments = [], onPostDeleted, onDeleteError, onPostClick }: PostCardProps) {
   const { user: currentUser } = useUser();
   const [showFullCaption, setShowFullCaption] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes_count);
@@ -136,7 +137,7 @@ function PostCard({ post, comments = [], onPostDeleted, onDeleteError }: PostCar
     setCommentsCount((prev) => Math.max(0, prev - 1));
   }, []);
 
-  // 메뉴 외부 클릭 시 닫기
+  // 메뉴 외부 클릭 및 ESC 키로 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -144,13 +145,22 @@ function PostCard({ post, comments = [], onPostDeleted, onDeleteError }: PostCar
       }
     };
 
-    if (showMenu) {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowMenu(false);
+        setShowDeleteDialog(false);
+      }
+    };
+
+    if (showMenu || showDeleteDialog) {
       document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("keydown", handleEscape);
       };
     }
-  }, [showMenu]);
+  }, [showMenu, showDeleteDialog]);
 
   // 게시물 삭제 핸들러
   const handleDeletePost = async () => {
@@ -221,21 +231,41 @@ function PostCard({ post, comments = [], onPostDeleted, onDeleteError }: PostCar
         {/* ⋯ 메뉴 */}
         <div className="relative" ref={menuRef}>
           <button
-            className="p-2 md:p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center hover:opacity-50 active:opacity-70 transition-opacity touch-manipulation"
+            className="p-2 md:p-2 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center hover:opacity-50 active:opacity-70 transition-opacity touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded"
             aria-label="더보기"
+            aria-expanded={showMenu}
+            aria-haspopup="true"
             onClick={() => setShowMenu(!showMenu)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowMenu(!showMenu);
+              }
+            }}
           >
             <MoreHorizontal className="w-5 h-5 text-[#262626]" />
           </button>
 
           {/* 드롭다운 메뉴 */}
           {showMenu && isOwnPost && (
-            <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-[#dbdbdb] z-50 animate-fade-in">
+            <div
+              className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg border border-[#dbdbdb] z-50 animate-fade-in"
+              role="menu"
+              aria-label="게시물 메뉴"
+            >
               <button
-                className="w-full px-4 py-3 text-left text-[#262626] hover:bg-gray-50 active:bg-gray-100 flex items-center gap-2 text-sm font-medium min-h-[44px] touch-manipulation transition-colors"
+                className="w-full px-4 py-3 text-left text-[#262626] hover:bg-gray-50 active:bg-gray-100 flex items-center gap-2 text-sm font-medium min-h-[44px] touch-manipulation transition-colors focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded-lg"
+                role="menuitem"
                 onClick={() => {
                   setShowMenu(false);
                   setShowDeleteDialog(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setShowMenu(false);
+                    setShowDeleteDialog(true);
+                  }
                 }}
               >
                 <Trash2 className="w-4 h-4 text-red-600" />
@@ -250,6 +280,11 @@ function PostCard({ post, comments = [], onPostDeleted, onDeleteError }: PostCar
       <div
         className="relative w-full aspect-square bg-gray-100 cursor-pointer"
         onDoubleClick={handleDoubleClick}
+        onClick={() => {
+          if (onPostClick) {
+            onPostClick(post.id);
+          }
+        }}
       >
         <Image
           src={post.image_url}

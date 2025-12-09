@@ -136,19 +136,23 @@ export default function CommentForm({
           }}
           onKeyDown={handleKeyDown}
           placeholder="댓글 달기..."
-          className="flex-1 text-sm text-[#262626] placeholder:text-[#8e8e8e] focus:outline-none bg-transparent"
+          className="flex-1 text-sm text-[#262626] placeholder:text-[#8e8e8e] focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded bg-transparent"
           disabled={isLoading}
           maxLength={1000}
           aria-label="댓글 입력"
+          aria-describedby={error ? "comment-error" : undefined}
+          aria-invalid={error ? "true" : "false"}
         />
         <button
           type="submit"
           disabled={isLoading || content.trim().length === 0}
-          className={`text-sm font-semibold transition-opacity min-w-[60px] flex items-center justify-center gap-1.5 touch-manipulation ${
+          className={`text-sm font-semibold transition-opacity min-w-[60px] min-h-[44px] flex items-center justify-center gap-1.5 touch-manipulation focus:outline-none focus:ring-2 focus:ring-[#0095f6] focus:ring-offset-2 rounded ${
             isLoading || content.trim().length === 0
               ? "text-[#8e8e8e] cursor-not-allowed"
               : "text-[#0095f6] hover:opacity-50 active:opacity-70"
           }`}
+          aria-label="댓글 게시"
+          aria-busy={isLoading}
         >
           {isLoading ? (
             <>
@@ -161,7 +165,9 @@ export default function CommentForm({
         </button>
       </div>
       {error && (
-        <p className="mt-2 text-xs text-[#ed4956]">{error}</p>
+        <p id="comment-error" className="mt-2 text-xs text-[#ed4956]" role="alert" aria-live="polite">
+          {error}
+        </p>
       )}
     </form>
   );

@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
+  // 테스트 페이지를 빌드에서 제외
+  async generateBuildId() {
+    return process.env.BUILD_ID || "build";
+  },
 };
 
 export default nextConfig;

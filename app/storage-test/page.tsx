@@ -13,6 +13,9 @@ import {
 } from "react-icons/lu";
 import Link from "next/link";
 
+// 빌드 시 prerendering 방지
+export const dynamic = "force-dynamic";
+
 // Supabase Storage FileObject 타입 정의
 interface FileObject {
   id: string;

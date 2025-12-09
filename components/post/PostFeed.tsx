@@ -14,6 +14,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import PostCard from "./PostCard";
 import PostCardSkeleton from "./PostCardSkeleton";
+import PostModal from "./PostModal";
 import { getUserFriendlyMessage, extractErrorMessage, isNetworkError } from "@/lib/utils/error-handler";
 import type { PostWithUserAndStats, CommentWithUser, PaginatedResponse } from "@/lib/types";
 
@@ -31,6 +32,8 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
   const [hasMore, setHasMore] = useState(true);
   const [offset, setOffset] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const LIMIT = 10;
 
@@ -144,6 +147,43 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
     };
   }, [hasMore, loading, loadingMore, offset, fetchPosts]);
 
+  // 게시물 삭제 핸들러
+  const handlePostDeleted = useCallback((postId: string) => {
+    setPosts((prev) => prev.filter((post) => post.id !== postId));
+    // 댓글 맵에서도 제거
+    setCommentsMap((prevMap) => {
+      const newMap = new Map(prevMap);
+      newMap.delete(postId);
+      return newMap;
+    });
+    // 모달이 열려있고 삭제된 게시물이면 모달 닫기
+    if (selectedPostId === postId) {
+      setIsModalOpen(false);
+      setSelectedPostId(null);
+    }
+    // 외부 콜백 호출 (필요한 경우)
+    if (externalOnPostDeleted) {
+      externalOnPostDeleted(postId);
+    }
+  }, [externalOnPostDeleted, selectedPostId]);
+
+  // 게시물 클릭 핸들러
+  const handlePostClick = useCallback((postId: string) => {
+    setSelectedPostId(postId);
+    setIsModalOpen(true);
+  }, []);
+
+  // 모달 닫기 핸들러
+  const handleModalClose = useCallback(() => {
+    setIsModalOpen(false);
+    setSelectedPostId(null);
+  }, []);
+
+  // 게시물 ID 변경 핸들러 (이전/다음 네비게이션)
+  const handlePostIdChange = useCallback((newPostId: string) => {
+    setSelectedPostId(newPostId);
+  }, []);
+
   // 로딩 상태
   if (loading) {
     return (
@@ -186,21 +226,6 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
     );
   }
 
-  // 게시물 삭제 핸들러
-  const handlePostDeleted = useCallback((postId: string) => {
-    setPosts((prev) => prev.filter((post) => post.id !== postId));
-    // 댓글 맵에서도 제거
-    setCommentsMap((prevMap) => {
-      const newMap = new Map(prevMap);
-      newMap.delete(postId);
-      return newMap;
-    });
-    // 외부 콜백 호출 (필요한 경우)
-    if (externalOnPostDeleted) {
-      externalOnPostDeleted(postId);
-    }
-  }, [externalOnPostDeleted]);
-
   return (
     <div className="space-y-4">
       {posts.map((post, index) => (
@@ -216,6 +241,7 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
             comments={commentsMap.get(post.id) || []}
             onPostDeleted={handlePostDeleted}
             onDeleteError={() => fetchPosts(0, false)}
+            onPostClick={handlePostClick}
           />
         </div>
       ))}
@@ -238,6 +264,17 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
         <div className="text-center py-8 text-[#8e8e8e] text-sm">
           모든 게시물을 불러왔습니다
         </div>
+      )}
+
+      {/* PostModal */}
+      {selectedPostId && (
+        <PostModal
+          postId={selectedPostId}
+          isOpen={isModalOpen}
+          onClose={handleModalClose}
+          posts={posts}
+          onPostIdChange={handlePostIdChange}
+        />
       )}
     </div>
   );

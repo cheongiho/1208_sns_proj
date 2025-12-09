@@ -260,3 +260,51 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* 접근성: 포커스 스타일 */
+@layer base {
+  /* 기본 포커스 스타일 (WCAG 2.1 AA 준수) */
+  *:focus-visible {
+    outline: 2px solid var(--instagram-blue);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* 버튼 포커스 스타일 */
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--instagram-blue);
+    outline-offset: 2px;
+  }
+
+  /* 입력 필드 포커스 스타일 */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--instagram-blue);
+    outline-offset: 2px;
+    border-color: var(--instagram-blue);
+  }
+
+  /* 마우스 사용자는 포커스 링 숨김 (키보드 사용자만 표시) */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* 접근성: 스킵 링크 (선택적) */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--instagram-blue);
+  color: white;
+  padding: 8px 16px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 4px;
+}
+
+.skip-link:focus {
+  top: 0;
+}

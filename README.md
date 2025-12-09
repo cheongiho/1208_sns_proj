@@ -302,6 +302,37 @@ pnpm start
 pnpm lint
 ```
 
+## 테스트
+
+### 반응형 테스트
+
+프로젝트는 Mobile, Tablet, Desktop 화면 크기를 지원합니다. 반응형 테스트를 수행하려면:
+
+1. **Chrome DevTools 사용**:
+   - 개발자 도구 열기 (F12)
+   - 디바이스 툴바 토글 (Ctrl+Shift+M)
+   - 다양한 화면 크기 선택
+
+2. **실제 디바이스 테스트**:
+   - 실제 스마트폰 및 태블릿에서 테스트 권장
+   - 다양한 브라우저에서 테스트 (Chrome, Safari, Firefox)
+
+자세한 테스트 체크리스트는 [docs/TESTING.md](docs/TESTING.md)를 참고하세요.
+
+### 프로덕션 빌드 테스트
+
+프로덕션 빌드를 테스트하려면:
+
+```bash
+# 프로덕션 빌드
+pnpm build
+
+# 프로덕션 서버 실행
+pnpm start
+```
+
+빌드가 성공하면 `.next` 디렉토리에 최적화된 프로덕션 빌드가 생성됩니다.
+
 ## 추가 설정 및 팁
 
 ### Clerk 한국어 설정
@@ -400,6 +431,56 @@ saas-template/
 - **`hooks/use-sync-user.ts`**: Clerk 사용자를 Supabase에 자동 동기화
 - **`components/providers/sync-user-provider.tsx`**: 앱 전역에서 사용자 동기화 실행
 - **`CLAUDE.md`**: Claude Code를 위한 프로젝트 가이드
+
+## 배포
+
+### Vercel 배포
+
+1. **프로젝트 연결**
+   - [Vercel Dashboard](https://vercel.com/dashboard)에 접속
+   - "Add New Project" 클릭
+   - GitHub/GitLab/Bitbucket 저장소 연결
+
+2. **환경 변수 설정**
+   - Vercel 프로젝트 설정 → Environment Variables
+   - `.env.example`에 있는 모든 환경 변수 추가
+   - 프로덕션, 프리뷰, 개발 환경별로 설정 가능
+
+3. **빌드 설정**
+   - Framework Preset: Next.js
+   - Build Command: `pnpm build` (기본값)
+   - Output Directory: `.next` (기본값)
+   - Install Command: `pnpm install` (기본값)
+
+4. **도메인 설정**
+   - 프로젝트 설정 → Domains
+   - 커스텀 도메인 추가 (선택적)
+   - `NEXT_PUBLIC_SITE_URL` 환경 변수에 도메인 설정
+
+### 프로덕션 빌드 테스트
+
+로컬에서 프로덕션 빌드를 테스트하려면:
+
+```bash
+# 프로덕션 빌드
+pnpm build
+
+# 프로덕션 서버 실행
+pnpm start
+```
+
+브라우저에서 [http://localhost:3000](http://localhost:3000)을 열어 확인합니다.
+
+### 환경 변수
+
+프로덕션 배포 시 다음 환경 변수를 설정해야 합니다:
+
+- **Clerk**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`
+- **Supabase**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- **Storage**: `NEXT_PUBLIC_STORAGE_BUCKET`
+- **Site URL**: `NEXT_PUBLIC_SITE_URL` (SEO 및 소셜 공유용)
+
+자세한 내용은 프로젝트 루트의 `.env.example` 파일을 참고하세요.
 
 ## 추가 리소스
 
