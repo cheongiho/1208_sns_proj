@@ -12,7 +12,7 @@
  * - Optimistic UI 업데이트
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
@@ -27,7 +27,7 @@ interface CommentListProps {
   onShowAllClick?: () => void; // "댓글 N개 모두 보기" 클릭 시
 }
 
-export default function CommentList({
+function CommentList({
   comments,
   postId,
   showAll = false,
@@ -140,3 +140,19 @@ export default function CommentList({
   );
 }
 
+// React.memo로 감싸서 props가 변경되지 않으면 리렌더링 방지
+export default React.memo(CommentList, (prevProps, nextProps) => {
+  return (
+    prevProps.postId === nextProps.postId &&
+    prevProps.showAll === nextProps.showAll &&
+    prevProps.comments.length === nextProps.comments.length &&
+    prevProps.comments.every((comment, index) => {
+      const nextComment = nextProps.comments[index];
+      return (
+        nextComment &&
+        comment.id === nextComment.id &&
+        comment.content === nextComment.content
+      );
+    })
+  );
+});

@@ -14,6 +14,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import PostCard from "./PostCard";
 import PostCardSkeleton from "./PostCardSkeleton";
+import { getUserFriendlyMessage, extractErrorMessage, isNetworkError } from "@/lib/utils/error-handler";
 import type { PostWithUserAndStats, CommentWithUser, PaginatedResponse } from "@/lib/types";
 
 interface PostFeedProps {
@@ -55,7 +56,8 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
 
         const response = await fetch(`/api/posts?${params.toString()}`);
         if (!response.ok) {
-          throw new Error("게시물을 불러오는데 실패했습니다");
+          const errorMessage = await extractErrorMessage(response);
+          throw new Error(errorMessage);
         }
 
         const data: PaginatedResponse<PostWithUserAndStats> = await response.json();
@@ -95,9 +97,13 @@ export default function PostFeed({ userId, onPostDeleted: externalOnPostDeleted 
         });
       } catch (err) {
         console.error("Error fetching posts:", err);
-        setError(
-          err instanceof Error ? err.message : "게시물을 불러오는데 실패했습니다"
-        );
+        const errorMessage = getUserFriendlyMessage(err);
+        // 네트워크 에러인 경우 특별한 메시지 표시
+        if (isNetworkError(err)) {
+          setError("네트워크 연결을 확인해주세요. 잠시 후 다시 시도해주세요.");
+        } else {
+          setError(errorMessage);
+        }
       } finally {
         setLoading(false);
         setLoadingMore(false);

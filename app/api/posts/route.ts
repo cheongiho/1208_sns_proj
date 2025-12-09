@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
+import { handleApiError } from "@/lib/utils/error-handler";
 import type { PostWithUserAndStats, PaginatedResponse } from "@/lib/types";
 
 /**
@@ -39,10 +40,15 @@ export async function GET(request: NextRequest) {
     const { data: postsData, error: postsError, count } = await query;
 
     if (postsError) {
+      const apiError = handleApiError(postsError, 500);
       console.error("Supabase error:", postsError);
       return NextResponse.json(
-        { error: "Failed to fetch posts", details: postsError.message },
-        { status: 500 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -159,10 +165,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
+    const apiError = handleApiError(error, 500);
     console.error("API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: apiError.message,
+        ...(apiError.details && { details: apiError.details }),
+        ...(apiError.code && { code: apiError.code }),
+      },
+      { status: apiError.status }
     );
   }
 }

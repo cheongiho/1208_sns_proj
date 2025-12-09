@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
+import { handleApiError } from "@/lib/utils/error-handler";
 import type { CommentWithUser } from "@/lib/types";
 
 /**
@@ -26,9 +27,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10", 10);
 
     if (!postId) {
+      const apiError = handleApiError(new Error("postId is required"), 400);
       return NextResponse.json(
-        { error: "postId is required" },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -43,10 +48,15 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     if (commentsError) {
+      const apiError = handleApiError(commentsError, 500);
       console.error("Supabase error:", commentsError);
       return NextResponse.json(
-        { error: "Failed to fetch comments", details: commentsError.message },
-        { status: 500 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -94,10 +104,15 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: comments });
   } catch (error) {
+    const apiError = handleApiError(error, 500);
     console.error("API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: apiError.message,
+        ...(apiError.details && { details: apiError.details }),
+        ...(apiError.code && { code: apiError.code }),
+      },
+      { status: apiError.status }
     );
   }
 }
@@ -108,7 +123,14 @@ export async function POST(request: NextRequest) {
     const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const apiError = handleApiError(new Error("Unauthorized"), 401);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
     }
 
     // 요청 본문 파싱
@@ -117,34 +139,53 @@ export async function POST(request: NextRequest) {
 
     // 필수 필드 검증
     if (!postId) {
+      const apiError = handleApiError(new Error("postId is required"), 400);
       return NextResponse.json(
-        { error: "postId is required" },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
     if (!content || typeof content !== "string") {
+      const apiError = handleApiError(new Error("content is required and must be a string"), 400);
       return NextResponse.json(
-        { error: "content is required and must be a string" },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
     // content 유효성 검증
     const trimmedContent = content.trim();
     if (trimmedContent.length === 0) {
+      const apiError = handleApiError(new Error("content cannot be empty"), 400);
       return NextResponse.json(
-        { error: "content cannot be empty" },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
     // 최대 길이 검증 (Instagram은 2,200자이지만 댓글은 더 짧게 제한)
     const MAX_COMMENT_LENGTH = 1000;
     if (trimmedContent.length > MAX_COMMENT_LENGTH) {
+      const apiError = handleApiError(
+        new Error(`댓글은 ${MAX_COMMENT_LENGTH}자 이하여야 합니다`),
+        400
+      );
       return NextResponse.json(
-        { error: `content must be less than ${MAX_COMMENT_LENGTH} characters` },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -158,10 +199,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (userError || !userData) {
+      const apiError = handleApiError(userError || new Error("User not found"), 404);
       console.error("User lookup error:", userError);
       return NextResponse.json(
-        { error: "User not found in database" },
-        { status: 404 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -177,10 +223,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (commentError) {
+      const apiError = handleApiError(commentError, 500);
       console.error("Supabase error:", commentError);
       return NextResponse.json(
-        { error: "Failed to create comment", details: commentError.message },
-        { status: 500 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -202,10 +253,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: commentWithUser });
   } catch (error) {
+    const apiError = handleApiError(error, 500);
     console.error("API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: apiError.message,
+        ...(apiError.details && { details: apiError.details }),
+        ...(apiError.code && { code: apiError.code }),
+      },
+      { status: apiError.status }
     );
   }
 }

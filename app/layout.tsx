@@ -5,6 +5,7 @@ import type { LocalizationResource } from "@clerk/types";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { SyncUserProvider } from "@/components/providers/sync-user-provider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -145,9 +146,11 @@ export default function RootLayout({
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <SyncUserProvider>
-            {children}
-          </SyncUserProvider>
+          <ErrorBoundary>
+            <SyncUserProvider>
+              {children}
+            </SyncUserProvider>
+          </ErrorBoundary>
         </body>
       </html>
     </ClerkProvider>

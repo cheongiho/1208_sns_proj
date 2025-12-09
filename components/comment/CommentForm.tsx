@@ -13,6 +13,7 @@
 
 import { useState, FormEvent, KeyboardEvent } from "react";
 import { useUser } from "@clerk/nextjs";
+import { getUserFriendlyMessage, extractErrorMessage, isNetworkError } from "@/lib/utils/error-handler";
 import type { CommentWithUser } from "@/lib/types";
 
 interface CommentFormProps {
@@ -66,8 +67,8 @@ export default function CommentForm({
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "댓글 작성에 실패했습니다");
+        const errorMessage = await extractErrorMessage(response);
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -82,9 +83,13 @@ export default function CommentForm({
       }
     } catch (err) {
       console.error("Comment error:", err);
-      setError(
-        err instanceof Error ? err.message : "댓글 작성에 실패했습니다"
-      );
+      const errorMessage = getUserFriendlyMessage(err);
+      // 네트워크 에러인 경우 특별한 메시지 표시
+      if (isNetworkError(err)) {
+        setError("네트워크 연결을 확인해주세요. 잠시 후 다시 시도해주세요.");
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }

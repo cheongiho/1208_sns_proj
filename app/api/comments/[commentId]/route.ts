@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
+import { handleApiError } from "@/lib/utils/error-handler";
 
 /**
  * @file route.ts
@@ -21,16 +22,27 @@ export async function DELETE(
     const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const apiError = handleApiError(new Error("Unauthorized"), 401);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
     }
 
     // URL 파라미터에서 commentId 추출
     const { commentId } = await params;
 
     if (!commentId) {
+      const apiError = handleApiError(new Error("commentId is required"), 400);
       return NextResponse.json(
-        { error: "commentId is required" },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -44,10 +56,15 @@ export async function DELETE(
       .single();
 
     if (userError || !userData) {
+      const apiError = handleApiError(userError || new Error("User not found"), 404);
       console.error("User lookup error:", userError);
       return NextResponse.json(
-        { error: "User not found in database" },
-        { status: 404 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -61,18 +78,27 @@ export async function DELETE(
       .single();
 
     if (commentFetchError || !commentData) {
+      const apiError = handleApiError(commentFetchError || new Error("Comment not found"), 404);
       console.error("Comment fetch error:", commentFetchError);
       return NextResponse.json(
-        { error: "Comment not found" },
-        { status: 404 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
     // 소유자 확인 (본인만 삭제 가능)
     if (commentData.user_id !== userId) {
+      const apiError = handleApiError(new Error("Forbidden: You can only delete your own comments"), 403);
       return NextResponse.json(
-        { error: "Forbidden: You can only delete your own comments" },
-        { status: 403 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -84,19 +110,29 @@ export async function DELETE(
       .eq("user_id", userId); // 추가 안전장치
 
     if (deleteError) {
+      const apiError = handleApiError(deleteError, 500);
       console.error("Supabase delete error:", deleteError);
       return NextResponse.json(
-        { error: "Failed to delete comment", details: deleteError.message },
-        { status: 500 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const apiError = handleApiError(error, 500);
     console.error("API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: apiError.message,
+        ...(apiError.details && { details: apiError.details }),
+        ...(apiError.code && { code: apiError.code }),
+      },
+      { status: apiError.status }
     );
   }
 }

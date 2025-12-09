@@ -11,8 +11,9 @@
  * - API 호출: POST /api/likes 또는 DELETE /api/likes
  */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Heart } from "lucide-react";
+import { getUserFriendlyMessage, extractErrorMessage, isNetworkError } from "@/lib/utils/error-handler";
 
 interface LikeButtonProps {
   postId: string;
@@ -21,7 +22,7 @@ interface LikeButtonProps {
   onLikeChange?: (liked: boolean, newCount: number) => void;
 }
 
-export default function LikeButton({
+function LikeButton({
   postId,
   initialLiked,
   initialLikesCount,
@@ -64,7 +65,8 @@ export default function LikeButton({
         // 에러 발생 시 롤백
         setIsLiked(!newLiked);
         setLikesCount(likesCount);
-        throw new Error(`Failed to ${newLiked ? "add" : "remove"} like`);
+        const errorMessage = await extractErrorMessage(response);
+        throw new Error(errorMessage);
       }
 
       // 성공 시 콜백 호출
@@ -73,6 +75,10 @@ export default function LikeButton({
       }
     } catch (error) {
       console.error("Like error:", error);
+      // 네트워크 에러인 경우 콘솔에만 로그 (사용자에게는 Optimistic UI가 이미 롤백됨)
+      if (isNetworkError(error)) {
+        console.warn("Network error during like operation:", getUserFriendlyMessage(error));
+      }
       // 에러는 이미 롤백됨
     } finally {
       setIsLoading(false);
@@ -105,4 +111,12 @@ export default function LikeButton({
   );
 }
 
+// React.memo로 감싸서 props가 변경되지 않으면 리렌더링 방지
+export default React.memo(LikeButton, (prevProps, nextProps) => {
+  return (
+    prevProps.postId === nextProps.postId &&
+    prevProps.initialLiked === nextProps.initialLiked &&
+    prevProps.initialLikesCount === nextProps.initialLikesCount
+  );
+});
 

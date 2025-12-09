@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createClerkSupabaseClient } from "@/lib/supabase/server";
+import { handleApiError } from "@/lib/utils/error-handler";
 
 /**
  * @file route.ts
@@ -19,7 +20,14 @@ export async function POST(request: NextRequest) {
     const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const apiError = handleApiError(new Error("Unauthorized"), 401);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
     }
 
     // 요청 본문 파싱
@@ -27,9 +35,13 @@ export async function POST(request: NextRequest) {
     const { postId } = body;
 
     if (!postId) {
+      const apiError = handleApiError(new Error("postId is required"), 400);
       return NextResponse.json(
-        { error: "postId is required" },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -43,10 +55,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (userError || !userData) {
+      const apiError = handleApiError(userError || new Error("User not found"), 404);
       console.error("User lookup error:", userError);
       return NextResponse.json(
-        { error: "User not found in database" },
-        { status: 404 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -63,27 +80,29 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      // 중복 좋아요인 경우 (UNIQUE 제약조건 위반)
-      if (error.code === "23505") {
-        return NextResponse.json(
-          { error: "Like already exists" },
-          { status: 409 }
-        );
-      }
-
+      const apiError = handleApiError(error, error.code === "23505" ? 409 : 500);
       console.error("Supabase error:", error);
       return NextResponse.json(
-        { error: "Failed to add like", details: error.message },
-        { status: 500 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
     return NextResponse.json({ success: true, data });
   } catch (error) {
+    const apiError = handleApiError(error, 500);
     console.error("API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: apiError.message,
+        ...(apiError.details && { details: apiError.details }),
+        ...(apiError.code && { code: apiError.code }),
+      },
+      { status: apiError.status }
     );
   }
 }
@@ -94,7 +113,14 @@ export async function DELETE(request: NextRequest) {
     const { userId: clerkUserId } = await auth();
 
     if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const apiError = handleApiError(new Error("Unauthorized"), 401);
+      return NextResponse.json(
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
+      );
     }
 
     // 요청 본문 파싱
@@ -102,9 +128,13 @@ export async function DELETE(request: NextRequest) {
     const { postId } = body;
 
     if (!postId) {
+      const apiError = handleApiError(new Error("postId is required"), 400);
       return NextResponse.json(
-        { error: "postId is required" },
-        { status: 400 }
+        {
+          error: apiError.message,
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -118,10 +148,15 @@ export async function DELETE(request: NextRequest) {
       .single();
 
     if (userError || !userData) {
+      const apiError = handleApiError(userError || new Error("User not found"), 404);
       console.error("User lookup error:", userError);
       return NextResponse.json(
-        { error: "User not found in database" },
-        { status: 404 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
@@ -135,19 +170,29 @@ export async function DELETE(request: NextRequest) {
       .eq("user_id", userId);
 
     if (error) {
+      const apiError = handleApiError(error, 500);
       console.error("Supabase error:", error);
       return NextResponse.json(
-        { error: "Failed to remove like", details: error.message },
-        { status: 500 }
+        {
+          error: apiError.message,
+          ...(apiError.details && { details: apiError.details }),
+          ...(apiError.code && { code: apiError.code }),
+        },
+        { status: apiError.status }
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const apiError = handleApiError(error, 500);
     console.error("API error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      {
+        error: apiError.message,
+        ...(apiError.details && { details: apiError.details }),
+        ...(apiError.code && { code: apiError.code }),
+      },
+      { status: apiError.status }
     );
   }
 }
